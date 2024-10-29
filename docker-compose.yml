@@ -1,0 +1,38 @@
+services:
+  sqlserver:
+    # image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${Sa_Password:-Password123}
+      - MSSQL_PID=Developer
+      - LD_LIBRARY_PATH=/opt/mssql/lib
+    user: root
+    ports:
+      - '1433:1433'
+    expose:
+      - '1433'
+    volumes:
+      - yadb:/var/lib/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${Sa_Password:-Password123} -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 10
+      timeout: 3s
+      start_period: 10s
+  sqlserver.configurator:
+    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
+    volumes:
+      - ./sql-files:/docker-entrypoint-initdb.d
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    command: >
+      bash -c '
+      /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P ${Sa_Password:-Password123} -C -d master -i docker-entrypoint-initdb.d/00-init.sql;
+      echo "All done!";
+      '
+
+volumes:
+  yadb:
