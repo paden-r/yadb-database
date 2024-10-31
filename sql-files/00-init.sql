@@ -51,9 +51,9 @@ GO
 -------------- Post table -------------------------------------------
 IF NOT EXISTS(SELECT NULL FROM sys.tables t
         INNER JOIN sys.schemas s ON t.schema_id=s.schema_id
-WHERE t.name = 'Post' AND s.name='dbo')
+WHERE t.name = 'Posts' AND s.name='dbo')
 BEGIN
-    CREATE TABLE dbo.Post(
+    CREATE TABLE dbo.Posts(
         PostID INT NOT NULL IDENTITY(1, 1),
         CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
         Title VARCHAR(200) NOT NULL,
@@ -62,16 +62,16 @@ BEGIN
         BodyID INT NOT NULL
     )
 
-    ALTER TABLE dbo.Post
-        ADD CONSTRAINT [pk_Post_PostID] PRIMARY KEY CLUSTERED (PostID);
+    ALTER TABLE dbo.Posts
+        ADD CONSTRAINT [pk_Posts_PostID] PRIMARY KEY CLUSTERED (PostID);
 
-    ALTER TABLE dbo.Post
-        ADD CONSTRAINT [fk_Post_PostBody] FOREIGN KEY ([BodyID]) REFERENCES dbo.PostBody ([BodyID]);
+    ALTER TABLE dbo.Posts
+        ADD CONSTRAINT [fk_Posts_PostBody] FOREIGN KEY ([BodyID]) REFERENCES dbo.PostBody ([BodyID]);
 
-    ALTER TABLE dbo.Post
-        ADD CONSTRAINT [fk_Post_PostCategory] FOREIGN KEY ([CategoryID]) REFERENCES dbo.PostCategory ([CategoryID]);
+    ALTER TABLE dbo.Posts
+        ADD CONSTRAINT [fk_Posts_PostCategory] FOREIGN KEY ([CategoryID]) REFERENCES dbo.PostCategory ([CategoryID]);
 
-    CREATE NONCLUSTERED INDEX ix_Post_CreateDate ON dbo.Post (CreateDate DESC)
+    CREATE NONCLUSTERED INDEX ix_Posts_CreateDate ON dbo.Posts (CreateDate DESC)
 
 END
 GO
@@ -125,7 +125,7 @@ CREATE OR ALTER PROCEDURE dbo.GetPosts
     @category VARCHAR(25) = NULL
 AS
 BEGIN
-    SELECT p.*, pc.ShortName FROM dbo.Post AS p
+    SELECT p.*, pc.ShortName FROM dbo.Posts AS p
         INNER JOIN dbo.PostCategory pc ON pc.CategoryID = p.CategoryID
     WHERE (@category IS NULL OR pc.ShortName = @category)
     ORDER BY p.CreateDate DESC
@@ -137,7 +137,7 @@ CREATE OR ALTER PROCEDURE dbo.GetPost
     @post_id INT
 AS
 BEGIN
-    SELECT p.*, pc.ShortName, pb.BodyText FROM dbo.Post AS p
+    SELECT p.*, pc.ShortName, pb.BodyText FROM dbo.Posts AS p
         INNER JOIN dbo.PostBody pb ON p.BodyID = pb.BodyID
         INNER JOIN dbo.PostCategory pc ON pc.CategoryID = p.CategoryID
     WHERE p.PostID = @post_id
@@ -177,7 +177,7 @@ CREATE OR ALTER PROCEDURE dbo.UpdatePost
     @category VARCHAR(25) = NULL
 AS
 BEGIN
-    IF EXISTS (SELECT NULL FROM dbo.Post p WHERE p.PostID = @post_id)
+    IF EXISTS (SELECT NULL FROM dbo.Posts p WHERE p.PostID = @post_id)
     BEGIN
         DECLARE @category_id INT = (SELECT pc.CategoryID FROM dbo.PostCategory pc WHERE pc.ShortName = @category)
 
